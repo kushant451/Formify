@@ -12,6 +12,8 @@ const NAV = [
   { href: "/dashboard/profile", label: "Profile" },
 ];
 
+const MAX_CREDITS = 10;
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -28,7 +30,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (loading || !user) return null;
 
-  const creditsPct = Math.min(100, Math.round((user.credits / 10) * 100));
+  const creditsPct = Math.min(100, Math.round((user.credits / MAX_CREDITS) * 100));
 
   return (
     <div className="min-h-screen flex p-4 gap-0">
@@ -55,7 +57,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
             <div className="h-full bg-brand-400 rounded-full" style={{ width: `${creditsPct}%` }} />
           </div>
-          <p className="text-xs font-medium mt-2">{user.credits} of 10</p>
+          <p className="text-xs font-medium mt-2">{user.credits} of {MAX_CREDITS}</p>
         </div>
       </aside>
       <main className="flex-1 p-6">{children}</main>
