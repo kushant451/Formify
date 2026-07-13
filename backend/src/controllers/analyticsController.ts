@@ -1,9 +1,10 @@
 import { Response } from "express";
+import mongoose from "mongoose";
 import { AuthRequest } from "../middleware/auth";
 import Content from "../models/Content";
 
 export const getAnalytics = async (req: AuthRequest, res: Response) => {
-  const userId = req.userId;
+  const userId = new mongoose.Types.ObjectId(req.userId);
 
   const total = await Content.countDocuments({ user: userId });
   const completed = await Content.countDocuments({ user: userId, status: "completed" });
