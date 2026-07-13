@@ -46,6 +46,39 @@ export const getContentById = async (req: AuthRequest, res: Response) => {
   res.json({ success: true, item });
 };
 
+const EDITABLE_FORMATS = [
+  "blogPost",
+  "linkedInPost",
+  "twitterThread",
+  "youtubeScript",
+  "emailNewsletter",
+];
+
+
+export const updateFormatText = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { format, text } = req.body as { format: string; text: string };
+
+    if (!EDITABLE_FORMATS.includes(format)) {
+      return res.status(400).json({ success: false, message: "Unknown format" });
+    }
+    if (typeof text !== "string" || !text.trim()) {
+      return res.status(400).json({ success: false, message: "Text cannot be empty" });
+    }
+
+    const content = await Content.findOne({ _id: id, user: req.userId });
+    if (!content) return res.status(404).json({ success: false, message: "Content not found" });
+
+    (content.generatedContent as any)[format] = text;
+    await content.save();
+
+    res.json({ success: true, format, content: content.generatedContent });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to save edit" });
+  }
+};
+
 const FORMAT_MAP: Record<string, { key: string; generator: (topic: string, tone: string) => Promise<string> }> = {
   blogPost: { key: "blogPost", generator: generateBlogPost },
   linkedInPost: { key: "linkedInPost", generator: generateLinkedInPost },
@@ -54,9 +87,6 @@ const FORMAT_MAP: Record<string, { key: string; generator: (topic: string, tone:
   emailNewsletter: { key: "emailNewsletter", generator: generateEmailNewsletter },
 };
 
-// Regenerate a single format (e.g. only the tweet thread) instead of
-// re-running all 5 generations. Runs synchronously since it's one
-// lightweight AI call — no need to go through the job queue for this.
 export const regenerateSingleFormat = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -80,8 +110,7 @@ export const regenerateSingleFormat = async (req: AuthRequest, res: Response) =>
     (content.generatedContent as any)[format] = newText;
     await content.save();
 
-    // Regenerating one format costs a fraction of a full generation —
-    // charge a smaller partial credit instead of a full credit.
+    
     await User.findByIdAndUpdate(req.userId, { $inc: { credits: -0.2 } });
 
     res.json({ success: true, format, content: content.generatedContent });

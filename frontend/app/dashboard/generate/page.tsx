@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import toast from "react-hot-toast";
 import api from "../../../lib/api";
-import { useAuth } from "../../context";
 
 const TONES = ["professional", "casual", "humorous", "inspiring"];
 
@@ -16,30 +15,18 @@ const FORMATS = [
 ];
 
 export default function GeneratePage() {
-  const { refreshUser } = useAuth();
   const [topic, setTopic] = useState("");
   const [tone, setTone] = useState("professional");
   const [loading, setLoading] = useState(false);
   const [regenerating, setRegenerating] = useState<string | null>(null);
   const [contentId, setContentId] = useState<string | null>(null);
   const [content, setContent] = useState<Record<string, string> | null>(null);
+  const [editingFormat, setEditingFormat] = useState<string | null>(null);
+  const [draftText, setDraftText] = useState("");
+  const [saving, setSaving] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
-  useEffect(() => {
-    const savedId = localStorage.getItem("formify_last_content_id");
-    if (!savedId) return;
-
-    api
-      .get(`/content/${savedId}`)
-      .then(({ data }) => {
-        setContentId(data.item._id);
-        setTopic(data.item.topic);
-        setTone(data.item.tone);
-        setContent(data.item.generatedContent);
-      })
-      .catch(() => localStorage.removeItem("formify_last_content_id"));
-  }, []);
-
+  
   const startStreaming = (id: string) => {
     const token = localStorage.getItem("formify_token");
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -52,7 +39,6 @@ export default function GeneratePage() {
 
       if (data.status === "completed") {
         setLoading(false);
-        refreshUser();
         es.close();
       } else if (data.status === "failed") {
         toast.error("Generation failed after retries. Please try again.");
@@ -62,6 +48,7 @@ export default function GeneratePage() {
     };
 
     es.onerror = () => {
+
       es.close();
       setLoading(false);
       toast.error("Connection lost. Check History for the result.");
@@ -77,7 +64,6 @@ export default function GeneratePage() {
     try {
       const { data } = await api.post("/content/generate", { topic, tone });
       setContentId(data.contentId);
-      localStorage.setItem("formify_last_content_id", data.contentId);
       startStreaming(data.contentId);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to start generation");
@@ -91,12 +77,36 @@ export default function GeneratePage() {
     try {
       const { data } = await api.post(`/content/${contentId}/regenerate`, { format });
       setContent(data.content);
-      refreshUser();
       toast.success(`${format} regenerated`);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Regeneration failed");
     } finally {
       setRegenerating(null);
+    }
+  };
+
+  const startEditing = (format: string) => {
+    setEditingFormat(format);
+    setDraftText(content?.[format] || "");
+  };
+
+  const cancelEditing = () => {
+    setEditingFormat(null);
+    setDraftText("");
+  };
+
+  const saveEdit = async (format: string) => {
+    if (!contentId) return;
+    setSaving(format);
+    try {
+      const { data } = await api.patch(`/content/${contentId}`, { format, text: draftText });
+      setContent(data.content);
+      toast.success(`${format} saved`);
+      setEditingFormat(null);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to save edit");
+    } finally {
+      setSaving(null);
     }
   };
 
@@ -150,20 +160,61 @@ export default function GeneratePage() {
               <div key={f.key} className="bg-surface-1 rounded-2xl p-4 shadow-sm">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-medium">{f.label}</span>
-                  {!loading && (
-                    <button
-                      type="button"
-                      onClick={() => handleRegenerate(f.key)}
-                      disabled={regenerating === f.key}
-                      className="text-xs text-brand-400 px-2 py-1"
-                    >
-                      {regenerating === f.key ? "Regenerating..." : "🔄 Regenerate"}
-                    </button>
+                  {!loading && editingFormat !== f.key && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => startEditing(f.key)}
+                        disabled={!content[f.key]}
+                        className="text-xs text-gray-500 px-2 py-1"
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRegenerate(f.key)}
+                        disabled={regenerating === f.key}
+                        className="text-xs text-brand-400 px-2 py-1"
+                      >
+                        {regenerating === f.key ? "Regenerating..." : "🔄 Regenerate"}
+                      </button>
+                    </div>
                   )}
                 </div>
-                <p className="text-xs text-gray-700 whitespace-pre-wrap">
-                  {content[f.key] || (loading ? "Waiting..." : "—")}
-                </p>
+
+                {editingFormat === f.key ? (
+                  <div>
+                    <textarea
+                      rows={10}
+                      className="w-full rounded-xl text-xs text-gray-700"
+                      value={draftText}
+                      onChange={(e) => setDraftText(e.target.value)}
+                      autoFocus
+                    />
+                    <div className="flex items-center gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => saveEdit(f.key)}
+                        disabled={saving === f.key || !draftText.trim()}
+                        className="bg-brand-400 text-white text-xs rounded-lg px-3 py-1.5"
+                      >
+                        {saving === f.key ? "Saving..." : "Save"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelEditing}
+                        disabled={saving === f.key}
+                        className="text-xs text-gray-500 px-3 py-1.5"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-700 whitespace-pre-wrap">
+                    {content[f.key] || (loading ? "Waiting..." : "—")}
+                  </p>
+                )}
               </div>
             ))}
           </div>
