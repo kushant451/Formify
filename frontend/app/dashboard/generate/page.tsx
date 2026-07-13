@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import toast from "react-hot-toast";
 import api from "../../../lib/api";
 
@@ -23,7 +23,21 @@ export default function GeneratePage() {
   const [content, setContent] = useState<Record<string, string> | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
-  
+  useEffect(() => {
+    const savedId = localStorage.getItem("formify_last_content_id");
+    if (!savedId) return;
+
+    api
+      .get(`/content/${savedId}`)
+      .then(({ data }) => {
+        setContentId(data.item._id);
+        setTopic(data.item.topic);
+        setTone(data.item.tone);
+        setContent(data.item.generatedContent);
+      })
+      .catch(() => localStorage.removeItem("formify_last_content_id"));
+  }, []);
+
   const startStreaming = (id: string) => {
     const token = localStorage.getItem("formify_token");
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -45,7 +59,6 @@ export default function GeneratePage() {
     };
 
     es.onerror = () => {
-
       es.close();
       setLoading(false);
       toast.error("Connection lost. Check History for the result.");
@@ -61,6 +74,7 @@ export default function GeneratePage() {
     try {
       const { data } = await api.post("/content/generate", { topic, tone });
       setContentId(data.contentId);
+      localStorage.setItem("formify_last_content_id", data.contentId);
       startStreaming(data.contentId);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to start generation");
