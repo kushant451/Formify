@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, ReactNode } from "next";
 import "./globals.css";
 import { AuthProvider } from "./context";
 
@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "Turn one topic into a blog post, LinkedIn post, tweet thread, YouTube script and newsletter, instantly.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
