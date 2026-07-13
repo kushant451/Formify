@@ -17,6 +17,7 @@ interface AuthContextType {
   logout: () => void;
   loading: boolean;
   updateUser: (userData: User) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -58,8 +59,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(userData);
   };
 
+  const refreshUser = async () => {
+    try {
+      const { data } = await api.get("/user/me");
+      updateUser(data.user);
+    } catch {
+      // if this fails (e.g. token expired), leave existing cached user as-is
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, loading, updateUser }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, loading, updateUser, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

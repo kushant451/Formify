@@ -3,6 +3,16 @@ import bcrypt from "bcryptjs";
 import { AuthRequest } from "../middleware/auth";
 import User from "../models/User";
 
+export const getMe = async (req: AuthRequest, res: Response) => {
+  const user = await User.findById(req.userId);
+  if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+  res.json({
+    success: true,
+    user: { id: user.id, name: user.name, email: user.email, credits: user.credits },
+  });
+};
+
 export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
     const { name, currentPassword, newPassword } = req.body;

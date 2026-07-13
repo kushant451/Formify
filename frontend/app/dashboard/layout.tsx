@@ -15,11 +15,16 @@ const NAV = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
   }, [loading, user, router]);
+
+  useEffect(() => {
+    if (user) refreshUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading || !user) return null;
 

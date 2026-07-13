@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import toast from "react-hot-toast";
 import api from "../../../lib/api";
+import { useAuth } from "../../context";
 
 const TONES = ["professional", "casual", "humorous", "inspiring"];
 
@@ -15,6 +16,7 @@ const FORMATS = [
 ];
 
 export default function GeneratePage() {
+  const { refreshUser } = useAuth();
   const [topic, setTopic] = useState("");
   const [tone, setTone] = useState("professional");
   const [loading, setLoading] = useState(false);
@@ -50,6 +52,7 @@ export default function GeneratePage() {
 
       if (data.status === "completed") {
         setLoading(false);
+        refreshUser();
         es.close();
       } else if (data.status === "failed") {
         toast.error("Generation failed after retries. Please try again.");
@@ -88,6 +91,7 @@ export default function GeneratePage() {
     try {
       const { data } = await api.post(`/content/${contentId}/regenerate`, { format });
       setContent(data.content);
+      refreshUser();
       toast.success(`${format} regenerated`);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Regeneration failed");
