@@ -34,16 +34,7 @@ export default function GeneratePage() {
     eventSourceRef.current = es;
 
     es.onmessage = (event) => {
-      if (!event.data) return; 
-
-      let data;
-      try {
-        data = JSON.parse(event.data);
-      } catch (err) {
-        console.warn("Skipping malformed SSE message:", event.data);
-        return;
-      }
-
+      const data = JSON.parse(event.data);
       if (data.content) setContent(data.content);
 
       if (data.status === "completed") {
