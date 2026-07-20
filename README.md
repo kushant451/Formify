@@ -4,6 +4,13 @@ Turn one topic into 5 platform-ready formats — blog post, LinkedIn post,
 Twitter/X thread, YouTube script, and email newsletter — generated in the
 background and streamed to the UI as they complete.
 
+## Live Demo
+- **App:** https://formify-six-eosin.vercel.app
+- **API:** https://formify-5vpg.onrender.com
+
+> Note: the backend is hosted on Render's free tier, so the first request
+> after a period of inactivity can take 30-50s to wake up.
+
 ## Tech Stack
 - **Frontend:** Next.js 15 (React 19) + Tailwind CSS
 - **Backend:** Node.js + Express (TypeScript)
