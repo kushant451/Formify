@@ -111,15 +111,15 @@ export default function GeneratePage() {
   };
 
   return (
-    <div>
+    <div className="mt-4 md:mt-0">
       <h1 className="text-xl font-medium mb-1">Generate content</h1>
       <p className="text-sm text-gray-500 mb-5">Turn one idea into five formats, instantly</p>
 
-      <form onSubmit={handleGenerate} className="bg-surface-1 rounded-2xl p-6 shadow-md mb-5">
+      <form onSubmit={handleGenerate} className="bg-surface-1 rounded-2xl p-4 md:p-6 shadow-md mb-5">
         <label className="text-xs text-gray-500">Topic or idea</label>
         <textarea
           rows={2}
-          className="w-full rounded-xl mt-1 mb-4"
+          className="w-full rounded-xl mt-1 mb-4 min-h-[72px] md:min-h-0"
           placeholder="e.g. Why every developer should learn AI in 2026"
           value={topic}
           onChange={(e) => setTopic(e.target.value)}

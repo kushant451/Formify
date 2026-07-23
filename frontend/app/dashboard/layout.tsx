@@ -33,8 +33,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const creditsPct = Math.min(100, Math.round((user.credits / MAX_CREDITS) * 100));
 
   return (
-    <div className="min-h-screen flex p-4 gap-0">
-      <aside className="w-52 bg-surface-1 rounded-2xl p-4 flex flex-col shadow-sm">
+    <div className="min-h-screen flex flex-col md:flex-row p-4 md:gap-0 gap-4 pb-24 md:pb-4">
+      {/* Desktop sidebar: unchanged from before, only shown at md+ */}
+      <aside className="hidden md:flex w-52 bg-surface-1 rounded-2xl p-4 flex-col shadow-sm">
         <div className="flex items-center gap-2 mb-8">
           <div className="w-8 h-8 rounded-xl bg-brand-400 flex items-center justify-center text-white text-sm">✨</div>
           <span className="font-medium text-sm">Formify</span>
@@ -57,10 +58,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
             <div className="h-full bg-brand-400 rounded-full" style={{ width: `${creditsPct}%` }} />
           </div>
-          <p className="text-xs font-medium mt-2">{user.credits} of {MAX_CREDITS}</p>
+          <p className="text-xs font-medium mt-2">{Math.round(user.credits * 10) / 10} of {MAX_CREDITS}</p>
         </div>
       </aside>
-      <main className="flex-1 p-6">{children}</main>
+
+      {/* Mobile top bar: logo + credits, only shown below md */}
+      <div className="flex md:hidden items-center justify-between bg-surface-1 rounded-2xl p-3 shadow-sm">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-brand-400 flex items-center justify-center text-white text-sm">✨</div>
+          <span className="font-medium text-sm">Formify</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-full bg-brand-400 rounded-full" style={{ width: `${creditsPct}%` }} />
+          </div>
+          <span className="text-xs text-gray-500 whitespace-nowrap">{Math.round(user.credits * 10) / 10}/{MAX_CREDITS}</span>
+        </div>
+      </div>
+
+      <main className="flex-1 p-4 md:p-6">{children}</main>
+
+      {/* Mobile bottom tab bar, only shown below md */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface-1 border-t border-gray-200 flex items-center justify-around px-2 py-2 shadow-md z-10">
+        {NAV.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`text-xs px-3 py-2 rounded-xl flex-1 text-center ${
+              pathname === item.href ? "bg-brand-50 text-brand-800 font-medium" : "text-gray-500"
+            }`}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }
